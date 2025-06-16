@@ -19,17 +19,17 @@ public class WeatherController {
 
     @GetMapping
     public ResponseEntity<List<WeatherDTO>> getWeeklyWeather(
-            @RequestParam BigDecimal altitude,
+            @RequestParam BigDecimal longitude,
             @RequestParam BigDecimal latitude
             ) {
-        return ResponseEntity.ok(weatherService.getWeeklyWeather(altitude, latitude));
+        return ResponseEntity.ok(weatherService.getWeeklyWeather(longitude, latitude));
     }
 
     @GetMapping("/summary")
     public ResponseEntity<SummaryDTO> getWeeklySummary(
-            @RequestParam BigDecimal altitude,
+            @RequestParam BigDecimal longitude,
             @RequestParam BigDecimal latitude
     ){
-        return ResponseEntity.ok(weatherService.getWeeklySummary(altitude, latitude));
+        return ResponseEntity.ok(weatherService.getWeeklySummary(longitude, latitude));
     }
 }
