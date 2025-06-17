@@ -1,9 +1,6 @@
 package com.weather.weatherapp.service;
 
-import com.weather.weatherapp.dto.DailyWeatherResponse;
-import com.weather.weatherapp.dto.SummaryDTO;
-import com.weather.weatherapp.dto.WeatherApiResponse;
-import com.weather.weatherapp.dto.WeatherDTO;
+import com.weather.weatherapp.dto.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -42,8 +39,6 @@ public class WeatherService {
                 .queryParam("timezone", "auto")
                 .build();
 
-        System.out.println(uri);
-
         WeatherApiResponse response = webClient.get()
                 .uri(uri)
                 .retrieve()
@@ -76,7 +71,50 @@ public class WeatherService {
         return photovoltaicsStrength.multiply(hours).multiply(panelsEfficiency);
     }
 
-    public SummaryDTO getWeeklySummary(BigDecimal altitude, BigDecimal latitude) {
-        return null;
+    public SummaryDTO getWeeklySummary(BigDecimal longitude, BigDecimal latitude) {
+        DefaultUriBuilderFactory  factory = new DefaultUriBuilderFactory(weatherUrl);
+
+        URI uri = factory.builder()
+                .queryParam("latitude", latitude)
+                .queryParam("longitude", longitude)
+                .queryParam("hourly", "pressure_msl")
+                .queryParam("daily", "weather_code,apparent_temperature_max,apparent_temperature_min,sunshine_duration")
+                .queryParam("temperature_unit", "celsius")
+                .queryParam("timezone", "auto")
+                .build();
+
+        WeatherApiResponse response = webClient.get()
+                .uri(uri)
+                .retrieve()
+                .bodyToMono(WeatherApiResponse.class)
+                .block();
+
+        if (response == null) return null;
+
+        return getSummaryDTO(response.hourly(), response.daily());
+    }
+
+    private SummaryDTO getSummaryDTO(HourlyWeatherResponse hourly, DailyWeatherResponse daily) {
+        BigDecimal sum = hourly.pressure_msl().stream().reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal average = sum.divide(BigDecimal.valueOf(hourly.pressure_msl().size()), 2, RoundingMode.HALF_UP);
+        BigDecimal max = daily.apparent_temperature_max().stream().max(BigDecimal::compareTo).orElse(BigDecimal.ZERO);
+        BigDecimal min = daily.apparent_temperature_min().stream().min(BigDecimal::compareTo).orElse(BigDecimal.ZERO);
+        BigDecimal sunExposureSum = daily.sunshine_duration().stream().reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal sunExposureAvg = sunExposureSum.divide(BigDecimal.valueOf(daily.sunshine_duration().size()), 2, RoundingMode.HALF_UP);
+
+        List<Integer> weatherCodes = daily.weather_code();
+        String message;
+        if (weatherCodes.stream().filter(c -> c <= 48).count() >= 4)
+            message = "Słoneczny tydzień";
+        else
+            message = "Tydzień z opadami";
+
+        return SummaryDTO.builder()
+                .averagePressure(average)
+                .maxTempWeek(max)
+                .minTempWeek(min)
+                .description(message)
+                .averageSunExposure(sunExposureAvg.divide(BigDecimal.valueOf(3600), 2, RoundingMode.HALF_UP))
+                .build();
     }
 }
