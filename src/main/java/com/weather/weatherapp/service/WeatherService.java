@@ -25,10 +25,8 @@ public class WeatherService {
 
     @Value("${WEATHER_API_URL}")
     private String weatherUrl;
-    @Value("${PHOTOVOLTAIC_STRENGTH}")
-    private BigDecimal photovoltaicsStrength;
-    @Value("${PANELS_EFFECTIVITY}")
-    private BigDecimal panelsEfficiency;
+    private final BigDecimal photovoltaicsStrength = BigDecimal.valueOf(2.5);
+    private final BigDecimal panelsEfficiency =  BigDecimal.valueOf(0.2);
     private final WebClient webClient = WebClient.create();
 
     public List<WeatherDTO> getWeeklyWeather(BigDecimal longitude, BigDecimal latitude) {
