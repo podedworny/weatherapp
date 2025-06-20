@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.web.reactive.function.client.ClientResponse;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.util.DefaultUriBuilderFactory;
 
@@ -40,21 +41,27 @@ public class WeatherService {
                 .queryParam("timezone", "auto")
                 .build();
 
-        WeatherApiResponse response = webClient.get()
-                .uri(uri)
-                .retrieve()
-                .bodyToMono(WeatherApiResponse.class)
-                .block();
+        try {
+            WeatherApiResponse response = webClient.get()
+                    .uri(uri)
+                    .retrieve()
+                    .onStatus(status -> !status.is2xxSuccessful(), ClientResponse::createException)
+                    .bodyToMono(WeatherApiResponse.class)
+                    .block();
 
-        if (response == null) return List.of();
+            if (response == null) return List.of();
 
-        List<WeatherDTO> result = new ArrayList<>();
+            List<WeatherDTO> result = new ArrayList<>();
 
-        for(int i = 0; i < response.daily().time().size(); i++){
-            result.add(getWeatherDTO(response.daily(), i));
+            for (int i = 0; i < response.daily().time().size(); i++) {
+                result.add(getWeatherDTO(response.daily(), i));
+            }
+
+            return result;
+        } catch (Exception e) {
+            log.error(e.getMessage());
+            return List.of();
         }
-
-        return result;
     }
 
     private WeatherDTO getWeatherDTO(DailyWeatherResponse daily, int i) {
@@ -84,15 +91,23 @@ public class WeatherService {
                 .queryParam("timezone", "auto")
                 .build();
 
-        WeatherApiResponse response = webClient.get()
-                .uri(uri)
-                .retrieve()
-                .bodyToMono(WeatherApiResponse.class)
-                .block();
+        try {
+            WeatherApiResponse response = webClient.get()
+                    .uri(uri)
+                    .retrieve()
+                    .onStatus(status -> !status.is2xxSuccessful(), ClientResponse::createException)
+                    .bodyToMono(WeatherApiResponse.class)
+                    .block();
 
-        if (response == null) return null;
+            if (response == null) return null;
 
-        return getSummaryDTO(response.hourly(), response.daily());
+            return getSummaryDTO(response.hourly(), response.daily());
+        }
+        catch (Exception e) {
+            log.error(e.getMessage());
+            return null;
+        }
+
     }
 
     private SummaryDTO getSummaryDTO(HourlyWeatherResponse hourly, DailyWeatherResponse daily) {
