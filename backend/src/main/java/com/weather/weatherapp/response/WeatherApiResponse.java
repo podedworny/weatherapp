@@ -1,4 +1,4 @@
-package com.weather.weatherapp.dto;
+package com.weather.weatherapp.response;
 
 public record WeatherApiResponse(
         HourlyWeatherResponse hourly,

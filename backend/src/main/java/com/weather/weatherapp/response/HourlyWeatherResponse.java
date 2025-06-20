@@ -1,4 +1,4 @@
-package com.weather.weatherapp.dto;
+package com.weather.weatherapp.response;
 
 import java.math.BigDecimal;
 import java.util.List;

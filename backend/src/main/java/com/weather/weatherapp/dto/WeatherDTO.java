@@ -7,10 +7,10 @@ import java.time.LocalDate;
 
 @Builder
 public record WeatherDTO(
-        LocalDate Date,
-        Integer WeatherCode,
-        BigDecimal MinTemperature,
-        BigDecimal MaxTemperature,
-        BigDecimal EstimatedGeneratedEnergy
+        LocalDate date,
+        Integer weatherCode,
+        BigDecimal minTemperature,
+        BigDecimal maxTemperature,
+        BigDecimal estimatedGeneratedEnergy
 ) {
 }

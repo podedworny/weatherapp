@@ -1,6 +1,9 @@
 package com.weather.weatherapp.service;
 
 import com.weather.weatherapp.dto.*;
+import com.weather.weatherapp.response.DailyWeatherResponse;
+import com.weather.weatherapp.response.HourlyWeatherResponse;
+import com.weather.weatherapp.response.WeatherApiResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -58,11 +61,11 @@ public class WeatherService {
 
     private WeatherDTO getWeatherDTO(DailyWeatherResponse daily, int i) {
         return WeatherDTO.builder()
-                .WeatherCode(daily.weather_code().get(i))
-                .Date(LocalDate.parse(daily.time().get(i)))
-                .MaxTemperature(daily.apparent_temperature_max().get(i))
-                .MinTemperature(daily.apparent_temperature_min().get(i))
-                .EstimatedGeneratedEnergy(calculateEstimatedUsage(daily.sunshine_duration().get(i)))
+                .weatherCode(daily.weather_code().get(i))
+                .date(LocalDate.parse(daily.time().get(i)))
+                .maxTemperature(daily.apparent_temperature_max().get(i))
+                .minTemperature(daily.apparent_temperature_min().get(i))
+                .estimatedGeneratedEnergy(calculateEstimatedUsage(daily.sunshine_duration().get(i)))
                 .build();
     }
 
@@ -104,11 +107,16 @@ public class WeatherService {
 
         List<Integer> weatherCodes = daily.weather_code();
         String message;
-        if (weatherCodes.stream().filter(c -> c <= 48).count() >= 4)
-            message = "Słoneczny tydzień";
-        else
-            message = "Tydzień z opadami";
+        long sunnyDays = weatherCodes.stream().filter(c -> c == 0 || c == 1).count();
+        long cloudyDays = weatherCodes.stream().filter(c -> c == 2 || c == 3 || c == 45 || c == 48).count();
 
+        if (sunnyDays >= 4) {
+            message = "W tym tygodniu będą przeważać słoneczne dni.";
+        } else if (cloudyDays >= 4 || (sunnyDays + cloudyDays) >= 4) {
+            message = "Dominować będzie pochmurna pogoda, bez większych opadów.";
+        } else {
+            message = "Prognoza wskazuje na dni z opadami.";
+        }
         return SummaryDTO.builder()
                 .averagePressure(average)
                 .maxTempWeek(max)
